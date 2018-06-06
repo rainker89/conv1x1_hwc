@@ -60,7 +60,7 @@ void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kern
 			ptrb4 = ptrb3 + channel_in;
 			
 			int chan = 0;
-			for ( int chan = 0; chan+3 < channel_in; k += 4 )
+			for ( ; chan+3 < channel_in; chan += 4 )
 			{	
 					
 				va1 = vld1q_f32( ptra1 += 4 );
@@ -119,14 +119,26 @@ void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kern
 			temp2 = vpaddq_f32( vc43,vc44 );
 			temp3 = vpaddq_f32( temp1, temp2 );
 			vst1q_f32( ptrc+=b, temp3 );
-			ptr -=4*b;
+			ptrc -= 4*b;
 			for( int i =0; i<4; i++)
 			{
 				for( int j=0; j<4; j++)
 				{
-					for( int k=0; k < channel_in - chan; k++)
+					for( int k=chan; k < channel_in; k++)
 					{
-						*(ptrc + i* chanel_out + j) += *
+						*(ptrc + i* chanel_out + j) += *(ptra1 + i*channel_in+k) * *(ptrb1+j*channel_in+k);
+					}
+				}
+			}
+	
+		}
+
+		while(oc < channel_out)
+		{
+			
+
+
+
 			while(chan < channel_in)
 			{
 				*ptrc++ += *(ptra1) * *(ptrb1++);
