@@ -1,30 +1,16 @@
-void run_1x1_hwc_4_4(float *input, float *output, float *kernel, int num_input_col int num_kernel_col, int channel_in,int channel_out, int begin_positon, int width, int height)
+void Conv2d_neon_imp_float_hwd::run_1x1_hwc_4_4(float *input, float *kernel, float *output, int num_input_col int num_kernel_col, int channel_in,int channel_out, int begin_positon)
 { 
-	for( int i =0; i<4; i++)
+	for( int i =0; i< num_input_col; i++)
 	{
-		for( int j=0; j<4; j++)
+		for( int j=0; j< num_kernel_col; j++)
 			{
-				for( int k=begin_position; k < channel_in; k++)
+				for( int k = begin_position; k < channel_in; k++)
 				{
-					*(ptrc + i* chanel_out + j) += *(ptra1 + i*channel_in+k) * *(ptrb1+j*channel_in+k);
+					*(out + i*chanel_out + j) += *(input + i*channel_in + k) * *(kernel + j * channel_in + k);
 				}
 			}
 	}
 }
-
-
-
-	
-
-
-
-
-
-
-
-
-
-
 
 void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kernel, TensorType *output)
 {
@@ -101,8 +87,6 @@ void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kern
 				vb3 = vld1q_f32( ptrb3 +=4 );
 				vb4 = vld1q_f32( ptrb4 +=4 );
 				
-				
-				
 				vc11 = vmlaq_f32( vc11, va1, vb1 );
 				vc12 = vmlaq_f32( vc12, va1, vb2 );
 				vc13 = vmlaq_f32( vc13, va1, vb3 );
@@ -124,10 +108,6 @@ void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kern
 				vc44 = vmlaq_f32( vc44, va4, vb4 );
 			}
 			
-		
-
-
-			
 			temp1 = vpaddq_f32( vc11,vc12 );
 			temp2 = vpaddq_f32( vc13,vc14 );
 			temp3 = vpaddq_f32( temp1, temp2 );
@@ -147,7 +127,41 @@ void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kern
 			temp2 = vpaddq_f32( vc43,vc44 );
 			temp3 = vpaddq_f32( temp1, temp2 );
 			vst1q_f32( ptrc+=b, temp3 );
-			ptrc -= 4*b;
+
+		//	ptrc -= 4*b;
+			
+			if(chan < channel_in) 
+			{
+				ptrc -= 4 * b;
+				ptra1 -= chan;
+				ptrb1 -= 4*b;
+				run_1x1_hwc_4_4(ptra1, ptrb1, ptrc,  4, 4, channel_in, channel_out, chan);
+			}
+		}
+
+		if(oc < channel_out)
+		{	
+						
+			ptrc = buffer_out + pix*channel_out + oc;
+			ptra1 = buffer_in + pix * channel_in;
+			ptrb1 = buffer_kernel + oc * channel_in;;
+			run_1x1_hwc_4_4(ptra1, ptrb1, ptrc, 4, channel - oc, channel_in, channel_out, 0); 
+		}
+	}
+	
+	if(pix < height * width)
+	{	
+		ptra1 = pix * channel_in;
+		ptrb1 = buffer_kernel;
+		ptrc =  pix* channel_out;
+		run_1x1_hwc_4_4(ptrc, ptra1, ptrb1, height * width - pix,  channel_out, channel_in, channel_out, 0);
+	}
+}
+
+
+
+
+/*
 			for( int i =0; i<4; i++)
 			{
 				for( int j=0; j<4; j++)
@@ -159,7 +173,7 @@ void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kern
 				}
 			}
 	
-		}
+}
 
 		while(oc < channel_out)
 		{
@@ -177,4 +191,4 @@ void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kern
 
 
 		}
-
+*/
