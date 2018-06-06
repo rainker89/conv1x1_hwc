@@ -1,3 +1,31 @@
+void run_1x1_hwc_4_4(float *input, float *output, float *kernel, int num_input_col int num_kernel_col, int channel_in,int channel_out, int begin_positon, int width, int height)
+{ 
+	for( int i =0; i<4; i++)
+	{
+		for( int j=0; j<4; j++)
+			{
+				for( int k=begin_position; k < channel_in; k++)
+				{
+					*(ptrc + i* chanel_out + j) += *(ptra1 + i*channel_in+k) * *(ptrb1+j*channel_in+k);
+				}
+			}
+	}
+}
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
 void Conv2d_neon_impl_float_hwc::run_1x1_hwc(TensorType *input, TensorType *kernel, TensorType *output)
 {
 #if __ARM_NEON
